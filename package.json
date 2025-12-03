@@ -1,0 +1,282 @@
+{
+  "name": "claude-copilot",
+  "displayName": "Claude Copilot",
+  "description": "An intelligent code assistant powered by Claude API with customizable model support",
+  "version": "0.1.0",
+  "publisher": "claude-copilot",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Machine Learning",
+    "Other"
+  ],
+  "keywords": [
+    "claude",
+    "copilot",
+    "ai",
+    "code completion",
+    "anthropic"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "icon": "resources/icon.png",
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudeCopilot.openChat",
+        "title": "Open Chat",
+        "category": "Claude Copilot"
+      },
+      {
+        "command": "claudeCopilot.inlineChat",
+        "title": "Inline Chat",
+        "category": "Claude Copilot"
+      },
+      {
+        "command": "claudeCopilot.explainCode",
+        "title": "Explain Code",
+        "category": "Claude Copilot"
+      },
+      {
+        "command": "claudeCopilot.fixCode",
+        "title": "Fix Code",
+        "category": "Claude Copilot"
+      },
+      {
+        "command": "claudeCopilot.refactorCode",
+        "title": "Refactor Code",
+        "category": "Claude Copilot"
+      },
+      {
+        "command": "claudeCopilot.generateDocs",
+        "title": "Generate Documentation",
+        "category": "Claude Copilot"
+      },
+      {
+        "command": "claudeCopilot.generateTests",
+        "title": "Generate Tests",
+        "category": "Claude Copilot"
+      },
+      {
+        "command": "claudeCopilot.switchModel",
+        "title": "Switch Model",
+        "category": "Claude Copilot"
+      },
+      {
+        "command": "claudeCopilot.clearChat",
+        "title": "Clear Chat",
+        "category": "Claude Copilot"
+      },
+      {
+        "command": "claudeCopilot.toggleCompletion",
+        "title": "Toggle Code Completion",
+        "category": "Claude Copilot"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "claudeCopilot.inlineChat",
+        "key": "ctrl+i",
+        "mac": "cmd+i",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "claudeCopilot.switchModel",
+        "key": "ctrl+shift+m",
+        "mac": "cmd+shift+m"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "claudeCopilot.submenu",
+          "group": "claudeCopilot"
+        }
+      ],
+      "claudeCopilot.submenu": [
+        {
+          "command": "claudeCopilot.explainCode",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "claudeCopilot.fixCode",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "claudeCopilot.refactorCode",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "claudeCopilot.generateDocs",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "claudeCopilot.generateTests",
+          "when": "editorHasSelection"
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "id": "claudeCopilot.submenu",
+        "label": "Claude Copilot"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "claudeCopilot",
+          "title": "Claude Copilot",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "claudeCopilot": [
+        {
+          "type": "webview",
+          "id": "claudeCopilot.chatView",
+          "name": "Chat"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Claude Copilot",
+      "properties": {
+        "claudeCopilot.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Claude API Key",
+          "order": 1
+        },
+        "claudeCopilot.baseUrl": {
+          "type": "string",
+          "default": "https://api.anthropic.com",
+          "description": "API Base URL (supports self-hosted/proxy)",
+          "order": 2
+        },
+        "claudeCopilot.model.completion": {
+          "type": "string",
+          "default": "claude-3-5-haiku-20241022",
+          "enum": [
+            "claude-3-5-haiku-20241022",
+            "claude-sonnet-4-20250514",
+            "claude-opus-4-20250514"
+          ],
+          "description": "Model for code completion",
+          "order": 3
+        },
+        "claudeCopilot.model.chat": {
+          "type": "string",
+          "default": "claude-sonnet-4-20250514",
+          "enum": [
+            "claude-3-5-haiku-20241022",
+            "claude-sonnet-4-20250514",
+            "claude-opus-4-20250514"
+          ],
+          "description": "Model for chat interactions",
+          "order": 4
+        },
+        "claudeCopilot.completion.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inline code completion",
+          "order": 5
+        },
+        "claudeCopilot.completion.delay": {
+          "type": "number",
+          "default": 150,
+          "description": "Delay in milliseconds before triggering completion (lower = faster but more API calls)",
+          "order": 6
+        },
+        "claudeCopilot.completion.maxTokens": {
+          "type": "number",
+          "default": 150,
+          "description": "Maximum tokens for completion response (lower = faster)",
+          "order": 7
+        },
+        "claudeCopilot.chat.maxTokens": {
+          "type": "number",
+          "default": 4096,
+          "description": "Maximum tokens for chat response",
+          "order": 8
+        },
+        "claudeCopilot.chat.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Temperature for chat responses (0-1)",
+          "order": 9
+        },
+        "claudeCopilot.chat.streamResponse": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable streaming responses",
+          "order": 10
+        },
+        "claudeCopilot.context.maxFiles": {
+          "type": "number",
+          "default": 10,
+          "description": "Maximum number of context files",
+          "order": 11
+        },
+        "claudeCopilot.context.includeImports": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include imported files in context",
+          "order": 12
+        },
+        "claudeCopilot.privacy.excludePatterns": {
+          "type": "array",
+          "default": [
+            "**/.env*",
+            "**/secrets/**",
+            "**/*.key",
+            "**/*.pem"
+          ],
+          "description": "File patterns to exclude from context",
+          "order": 13
+        },
+        "claudeCopilot.ui.showTokenUsage": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show token usage in status bar",
+          "order": 14
+        },
+        "claudeCopilot.ui.showModelInStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show current model in status bar",
+          "order": 15
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "lint": "eslint src --ext ts",
+    "build": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "build:watch": "npm run build -- --watch",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "esbuild": "^0.19.8",
+    "eslint": "^8.55.0",
+    "typescript": "^5.3.2"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0"
+  }
+}
