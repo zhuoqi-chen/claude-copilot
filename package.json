@@ -4,6 +4,7 @@
   "description": "An intelligent code assistant powered by Claude API with customizable model support",
   "version": "0.1.0",
   "publisher": "claude-copilot",
+  "repository": "https://github.com/zhuoqi-chen/claude-copilot",
   "engines": {
     "vscode": "^1.85.0"
   },
