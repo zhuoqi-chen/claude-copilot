@@ -19,7 +19,7 @@ import bash from 'highlight.js/lib/languages/bash';
 import yaml from 'highlight.js/lib/languages/yaml';
 import markdown from 'highlight.js/lib/languages/markdown';
 
-import { ApiClient, ConfigManager, ContextManager, ChatSessionManager } from '../services';
+import { ApiClient, ConfigManager, ContextManager, ChatSessionManager, ModelManager } from '../services';
 import { ChatMessage } from '../types';
 
 // Register languages
@@ -57,6 +57,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
   private contextManager: ContextManager;
   private configManager: ConfigManager;
   private sessionManager: ChatSessionManager;
+  private modelManager: ModelManager;
   private extensionUri: vscode.Uri;
   private marked: Marked;
 
@@ -65,13 +66,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     apiClient: ApiClient,
     contextManager: ContextManager,
     configManager: ConfigManager,
-    sessionManager: ChatSessionManager
+    sessionManager: ChatSessionManager,
+    modelManager: ModelManager
   ) {
     this.extensionUri = extensionUri;
     this.apiClient = apiClient;
     this.contextManager = contextManager;
     this.configManager = configManager;
     this.sessionManager = sessionManager;
+    this.modelManager = modelManager;
 
     // Initialize marked with highlight.js
     this.marked = new Marked(
@@ -200,8 +203,37 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         case 'addContext':
           await this.addSelectionContext();
           break;
+        case 'switchModel':
+          await this.handleSwitchModel();
+          break;
+        case 'getModelInfo':
+          this.sendModelInfo();
+          break;
       }
     });
+
+    // Listen for config changes to update model info
+    this.configManager.onConfigChange(() => {
+      this.sendModelInfo();
+    });
+  }
+
+  private sendModelInfo(): void {
+    if (!this.view) return;
+
+    const chatModel = this.modelManager.getCurrentModel('chat');
+    const shortName = this.modelManager.getShortModelName(chatModel);
+
+    this.view.webview.postMessage({
+      type: 'modelInfo',
+      model: shortName,
+      fullModel: chatModel,
+    });
+  }
+
+  private async handleSwitchModel(): Promise<void> {
+    await this.modelManager.switchModel('chat');
+    this.sendModelInfo();
   }
 
   private async restoreSession(): Promise<void> {
@@ -230,6 +262,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
         messageCount: s.messages.length,
       })),
     });
+
+    // Also send model info
+    this.sendModelInfo();
   }
 
   private sendSessionsList(): void {
@@ -907,6 +942,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
   <div class="input-container">
     <div class="toolbar">
+      <button onclick="switchModel()" title="Click to switch model" id="modelButton">Model: ...</button>
       <button onclick="addContext()" title="Add selected code as context">+ Selection</button>
       <button onclick="clearChat()" title="Clear current chat">Clear</button>
     </div>
@@ -932,6 +968,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
     const sessionTitle = document.getElementById('sessionTitle');
     const sessionsPanel = document.getElementById('sessionsPanel');
     const sessionsList = document.getElementById('sessionsList');
+    const modelButton = document.getElementById('modelButton');
 
     let isLoading = false;
     let currentStreamElement = null;
@@ -940,6 +977,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
     // Notify extension that webview is ready
     vscode.postMessage({ type: 'ready' });
+
+    function switchModel() {
+      vscode.postMessage({ type: 'switchModel' });
+    }
+
+    function updateModelInfo(data) {
+      if (data.model) {
+        modelButton.textContent = 'Model: ' + data.model;
+        modelButton.title = data.fullModel || data.model;
+      }
+    }
 
     function handleKeyDown(event) {
       if (event.key === 'Enter' && !event.shiftKey) {
@@ -1122,6 +1170,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
               }
             });
           }
+          break;
+
+        case 'modelInfo':
+          updateModelInfo(data);
           break;
 
         case 'sessionsList':

@@ -1,21 +1,12 @@
 import * as vscode from 'vscode';
 import { ConfigManager } from './configManager';
-import { SUPPORTED_MODELS, SupportedModel, ModelType } from '../types';
+import { SUPPORTED_MODELS, ModelType } from '../types';
 
 export class ModelManager {
   private configManager: ConfigManager;
-  private statusBarItem: vscode.StatusBarItem;
 
   constructor(configManager: ConfigManager) {
     this.configManager = configManager;
-    this.statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-    this.statusBarItem.command = 'claudeCopilot.switchModel';
-    this.updateStatusBar();
-
-    // Listen for config changes
-    configManager.onConfigChange(() => {
-      this.updateStatusBar();
-    });
   }
 
   public getCurrentModel(type: ModelType): string {
@@ -25,6 +16,13 @@ export class ModelManager {
 
   public getSupportedModels(): readonly string[] {
     return SUPPORTED_MODELS;
+  }
+
+  public getShortModelName(model: string): string {
+    if (model.includes('haiku')) return 'Haiku';
+    if (model.includes('sonnet')) return 'Sonnet';
+    if (model.includes('opus')) return 'Opus';
+    return model;
   }
 
   public async switchModel(type: ModelType): Promise<void> {
@@ -66,26 +64,7 @@ export class ModelManager {
     }
   }
 
-  private updateStatusBar(): void {
-    const config = this.configManager.getConfig();
-    if (config.ui.showModelInStatusBar) {
-      const chatModel = this.getShortModelName(config.model.chat);
-      this.statusBarItem.text = `$(hubot) ${chatModel}`;
-      this.statusBarItem.tooltip = `Claude Copilot\nChat: ${config.model.chat}\nCompletion: ${config.model.completion}\nClick to switch model`;
-      this.statusBarItem.show();
-    } else {
-      this.statusBarItem.hide();
-    }
-  }
-
-  private getShortModelName(model: string): string {
-    if (model.includes('haiku')) return 'Haiku';
-    if (model.includes('sonnet')) return 'Sonnet';
-    if (model.includes('opus')) return 'Opus';
-    return model;
-  }
-
   public dispose(): void {
-    this.statusBarItem.dispose();
+    // No resources to dispose
   }
 }

@@ -4,8 +4,6 @@ import { registerCompletionProvider } from './providers';
 import { ChatViewProvider } from './webview';
 import { registerCommands } from './commands';
 
-let statusBarItem: vscode.StatusBarItem;
-
 export function activate(context: vscode.ExtensionContext): void {
   console.log('Claude Copilot is now active!');
 
@@ -27,7 +25,8 @@ export function activate(context: vscode.ExtensionContext): void {
     apiClient,
     contextManager,
     configManager,
-    sessionManager
+    sessionManager,
+    modelManager
   );
 
   context.subscriptions.push(
@@ -47,18 +46,8 @@ export function activate(context: vscode.ExtensionContext): void {
     chatViewProvider
   );
 
-  // Create status bar items
-  createStatusBarItems(context, apiClient, configManager);
-
   // Add model manager to subscriptions for cleanup
   context.subscriptions.push({ dispose: () => modelManager.dispose() });
-
-  // Listen for configuration changes
-  context.subscriptions.push(
-    configManager.onConfigChange(() => {
-      updateStatusBar(apiClient, configManager);
-    })
-  );
 }
 
 function showApiKeyNotification(): void {
@@ -75,56 +64,6 @@ function showApiKeyNotification(): void {
         );
       }
     });
-}
-
-function createStatusBarItems(
-  context: vscode.ExtensionContext,
-  apiClient: ApiClient,
-  configManager: ConfigManager
-): void {
-  // Token usage status bar item
-  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
-  statusBarItem.command = 'claudeCopilot.openChat';
-  context.subscriptions.push(statusBarItem);
-
-  updateStatusBar(apiClient, configManager);
-
-  // Update token usage periodically
-  const updateInterval = setInterval(() => {
-    updateStatusBar(apiClient, configManager);
-  }, 5000);
-
-  context.subscriptions.push({
-    dispose: () => clearInterval(updateInterval),
-  });
-}
-
-function updateStatusBar(apiClient: ApiClient, configManager: ConfigManager): void {
-  const config = configManager.getConfig();
-
-  if (config.ui.showTokenUsage) {
-    const usage = apiClient.getTotalUsage();
-    const totalTokens = usage.inputTokens + usage.outputTokens;
-
-    if (totalTokens > 0) {
-      statusBarItem.text = `$(pulse) ${formatTokens(totalTokens)} tokens`;
-      statusBarItem.tooltip = `Claude Copilot Token Usage\nInput: ${formatTokens(usage.inputTokens)}\nOutput: ${formatTokens(usage.outputTokens)}\nClick to open chat`;
-      statusBarItem.show();
-    } else {
-      statusBarItem.hide();
-    }
-  } else {
-    statusBarItem.hide();
-  }
-}
-
-function formatTokens(tokens: number): string {
-  if (tokens >= 1000000) {
-    return (tokens / 1000000).toFixed(1) + 'M';
-  } else if (tokens >= 1000) {
-    return (tokens / 1000).toFixed(1) + 'K';
-  }
-  return tokens.toString();
 }
 
 export function deactivate(): void {
