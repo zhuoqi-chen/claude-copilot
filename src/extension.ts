@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { ApiClient, ConfigManager, ContextManager, ModelManager } from './services';
+import { ApiClient, ConfigManager, ContextManager, ModelManager, ChatSessionManager } from './services';
 import { registerCompletionProvider } from './providers';
 import { ChatViewProvider } from './webview';
 import { registerCommands } from './commands';
@@ -14,6 +14,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const apiClient = new ApiClient(configManager);
   const contextManager = new ContextManager(configManager);
   const modelManager = new ModelManager(configManager);
+  const sessionManager = new ChatSessionManager(context);
 
   // Check API key configuration
   if (!configManager.isApiKeyConfigured()) {
@@ -25,7 +26,8 @@ export function activate(context: vscode.ExtensionContext): void {
     context.extensionUri,
     apiClient,
     contextManager,
-    configManager
+    configManager,
+    sessionManager
   );
 
   context.subscriptions.push(
